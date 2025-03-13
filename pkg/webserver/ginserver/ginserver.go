@@ -1,10 +1,12 @@
 package ginserver
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 // ServerConfig 用于配置 Gin 服务器
@@ -48,6 +50,6 @@ func StartGinServer(config ServerConfig) {
 
 	// 启动服务器并捕获可能的错误
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logrus.Fatalf("Failed to start server: %v", err)
 	}
 }

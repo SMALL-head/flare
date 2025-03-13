@@ -1,10 +1,9 @@
-package ebpfProc
+package container
 
 import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"flare/pkg/singleton/ebpf/chann"
 	"flare/pkg/utils/bpfgo"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
@@ -88,18 +87,5 @@ func NewContainerInfo(msg string, n uint32) *containerInfo {
 	return &containerInfo{
 		Msg:    bpfgo.GoString2BpfCharArray16(msg),
 		Number: int32(n),
-	}
-}
-
-func HandleChan() {
-	for {
-		select {
-		case e := <-chann.GetAddAuditFileChan():
-			// TODO: 新增审计文件
-			logrus.Infof("receive add audit file event, filename = %s", e.Filename)
-		case e := <-chann.GetDeleteAuditFileChan():
-			// TODO: 删除审计文件
-			logrus.Infof("receive delete audit file event, filename = %s", e.Filename)
-		}
 	}
 }

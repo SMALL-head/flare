@@ -12,4 +12,13 @@ func RegisterRoutes(r *gin.Engine) {
 	eFile := r.Group("/ebpf/file")
 	// 添加审计文件名
 	eFile.POST("/addAuditFileName", addAuditFileName)
+
+	debugger := r.Group("/debug")
+	{
+		e := debugger.Group("/ebpf")
+		{
+			e.GET("/fileAudit/map", getFileAuditMap)
+		}
+	}
+	
 }

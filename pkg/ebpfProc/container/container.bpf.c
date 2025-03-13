@@ -26,13 +26,6 @@ struct {
     __type(value, struct info);
 } infos SEC(".maps");
 
-struct {
-    __uint(type , BPF_MAP_TYPE_HASH);
-    __uint(max_entries, 1024);
-    __type(key, char[160]);
-    __type(value, bool);
-} audit_files SEC(".maps");
-
 static __always_inline bool str_eq(const char *str1, const char *str2, int len) {
     for (int i = 0; i < len; i++) {
         if (str1[i] != str2[i]) {
@@ -93,7 +86,7 @@ int tracepoint_syscalls_interact_with_userspace(struct trace_event_raw_sys_enter
             bpf_printk("not found info in map: mnt_inode = %u", key);
             return 0;
         }
-        bpf_printk("tail in inode = %u is triggered", key);
+
         // bpf_printk("find info in map: msg = %s, number = %d, mnt_inode = %u", val->msg, val->number, mnt_ns_inode);
     }
     return 0;

@@ -1,5 +1,6 @@
 //go:build ignore
 #define SIGKILL 9
+#define MAX_FILES_PER_NS 10
 
 struct event_t {
     pid_t ppid;
@@ -12,4 +13,8 @@ struct event_t {
 struct info {
     char msg[16];
     int number;
+};
+
+struct files_inode {
+    unsigned int file_inode[MAX_FILES_PER_NS]
 };

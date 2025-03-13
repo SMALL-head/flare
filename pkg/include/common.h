@@ -33,4 +33,6 @@ struct event_t {
     int fmode;
     char comm[16];
     char filename[160];
+    unsigned int mnt_ns_inode;
+    unsigned int file_inode;
 };

@@ -14,6 +14,8 @@ const (
 )
 
 type FileNameEvent struct {
-	Action   EventAction
-	Filename string
+	Action    EventAction
+	Filename  string
+	FileInode uint32
+	MntInode  uint32
 }
