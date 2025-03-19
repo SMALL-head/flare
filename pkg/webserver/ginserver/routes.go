@@ -13,6 +13,9 @@ func RegisterRoutes(r *gin.Engine) {
 	// 添加审计文件名
 	eFile.POST("/addAuditFileName", addAuditFileName)
 
+	// 删除审计文件名
+	eFile.POST("/deleteAuditFileName", deleteAuditFileName)
+
 	debugger := r.Group("/debug")
 	{
 		e := debugger.Group("/ebpf")
@@ -20,5 +23,5 @@ func RegisterRoutes(r *gin.Engine) {
 			e.GET("/fileAudit/map", getFileAuditMap)
 		}
 	}
-	
+
 }

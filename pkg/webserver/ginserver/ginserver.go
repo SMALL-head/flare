@@ -1,7 +1,7 @@
 package ginserver
 
 import (
-	"log"
+	"io"
 	"net/http"
 	"time"
 
@@ -31,9 +31,9 @@ func DefaultConfig() ServerConfig {
 func StartGinServer(config ServerConfig) {
 	// 设置运行模式
 	gin.SetMode(config.Mode)
-
+	gin.DefaultWriter = io.Discard
 	// 创建一个默认的 Gin 引擎
-	r := gin.Default()
+	r := gin.New()
 
 	// 注册路由
 	RegisterRoutes(r)
@@ -46,7 +46,7 @@ func StartGinServer(config ServerConfig) {
 		WriteTimeout: config.Timeout,
 	}
 
-	log.Printf("Starting Gin server on %s:%s\n", config.Host, config.Port)
+	logrus.Printf("Starting Gin server on %s:%s\n", config.Host, config.Port)
 
 	// 启动服务器并捕获可能的错误
 	if err := srv.ListenAndServe(); err != nil {

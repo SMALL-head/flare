@@ -119,6 +119,7 @@ func DeleteAuditFileInMap(mntInode uint32, fileInode uint32) error {
 	return nil
 }
 
+// AddMntInodeToMap 创建审计文件的map，key为容器命名空间的Inode号，value为文件的inode号
 func AddMntInodeToMap(mntInode uint32) error {
 	value := &fileAuditFileInfoMap{}
 	value.Files = [10]uint32{}

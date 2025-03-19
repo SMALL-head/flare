@@ -60,10 +60,10 @@ int BPF_PROG(lsm_file_open_container, struct file *file) {
     event.mnt_ns_inode = (unsigned int)BPF_CORE_READ(proxy, mnt_ns, ns.inum);
 
     // inode比较统一转化为unsigned int，otherwise会有出乎意料的比较结果false发生
-    if ((unsigned int)event.mnt_ns_inode != (unsigned int)4026532680) {
-        // 我只想看特定的ns的日志，要不然日志太多不方便调试
-        return 0;
-    }
+    // if ((unsigned int)event.mnt_ns_inode != (unsigned int)4026532680) {
+    //     // 我只想看特定的ns的日志，要不然日志太多不方便调试
+    //     return 0;
+    // }
 
     struct file_info_map *audit_files = bpf_map_lookup_elem(&audit_files_map, &event.mnt_ns_inode);
 
@@ -111,6 +111,10 @@ int BPF_PROG(lsm_file_open_container, struct file *file) {
 
     // 将事件提交到events中供用户态程序消费
     if (is_audit_file) {
+        // 如果flare那边你看到了多次审计结果，那么你一定会溯源到这里来。 
+        // 先说结论：一个命令可能会触发open多次。一个命令，例如'cat'，kernel function中可能涉及到对同一个文件的多次open操作。
+        // 从审计的角度来说，这很多余，但是这是kernel的行为，我们无法改变。所以，如果你看到了多次审计结果，不要惊慌，这是正常的。
+        // bpf_printk("send perf event");
         bpf_perf_event_output(ctx, &file_audit_events, BPF_F_CURRENT_CPU, &event, sizeof(event));
     }
 

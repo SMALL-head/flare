@@ -36,7 +36,7 @@ func ListenForCreatePodEvent(createPodChan chan xevent.PodInfo, stopPodChan chan
 				var e xevent.PodInfo
 				e.PodName = containerInfo.Name
 				e.Pid = containerInfo.State.Pid
-				createPodChan <- e
+				createPodChan <- e // refer to HandleCreatePodEvent
 				logrus.Infof("container started/created, name = %s, send to channel", containerInfo.Name)
 			} else if event.Type == events.ContainerEventType && event.Action == events.ActionStop {
 				// TODO: remove container info from ebpf map
