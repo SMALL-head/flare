@@ -9,6 +9,9 @@ GO_TEST := $(GO) test -v
 GO_GENERATE := $(GO) generate
 GO_LDFLAGS := -ldflags="-s -w"
 
+# eBPF代码所在的子目录
+BPF_DIRS := pkg/ebpfProc/container pkg/ebpfProc/fileAudit pkg/ebpfProc/reversesh
+
 # 生成的二进制文件
 BIN := ./bin/$(APP_NAME)
 
@@ -45,7 +48,9 @@ test:
 # 生成 eBPF 代码（如果项目使用 eBPF）
 ebpf:
 	@echo "🔧 Generating eBPF skeleton..."
-	$(GO_GENERATE)
+	@for dir in $(BPF_DIRS); do \
+  		echo "🛠️ Running go generate in $$dir..."; \
+  		$(GO_GENERATE) $$dir; \
 
 # 重新生成所有
 regen: clean ebpf build
