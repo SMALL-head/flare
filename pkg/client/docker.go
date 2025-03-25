@@ -1,7 +1,9 @@
-package docker
+package client
+
 import (
 	dclient "github.com/docker/docker/client"
 )
+
 var (
 	DockerClient *dclient.Client
 )
