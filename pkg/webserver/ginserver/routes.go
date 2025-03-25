@@ -23,5 +23,9 @@ func RegisterRoutes(r *gin.Engine) {
 			e.GET("/fileAudit/map", getFileAuditMap)
 		}
 	}
-
+	ePlugin := r.Group("/ebpf/plugin")
+	{
+		ePlugin.POST("enable", enablePlugin)
+		ePlugin.POST("disable", disablePlugin)
+	}
 }

@@ -2,9 +2,11 @@ package reversesh
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"flare/pkg/utils/bpfgo"
+	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 
@@ -12,7 +14,15 @@ import (
 	"github.com/cilium/ebpf/perf"
 )
 
-func AuditReverseSh() {
+var (
+	perfReaderRecordCh chan perf.Record
+)
+
+func init() {
+	perfReaderRecordCh = make(chan perf.Record, 100)
+}
+
+func AuditReverseSh(ctx context.Context) {
 	var obj reverseObjects
 	if err := loadReverseObjects(&obj, nil); err != nil {
 		log.Fatalf("load ebpf object fail: %v", err)
@@ -43,25 +53,48 @@ func AuditReverseSh() {
 	defer closeTP.Close()
 
 	// 监控perf事件并打印
-	var event reverseEventT
+	//var event reverseEventT
 	perfReader, err := perf.NewReader(obj.Events, os.Getpagesize())
 	if err != nil {
 		log.Fatalf("get perf event reader failed, err = %v", err)
 	}
-	for {
-		record, err := perfReader.Read()
-		if err != nil {
-			if errors.Is(err, perf.ErrClosed) {
-				return
-			}
-			log.Fatalf("reading record from perf reader, err = %v", err)
-		}
+	defer perfReader.Close()
 
-		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-			log.Printf("parsing perf event: %s", err)
-			continue
+	up := true
+	go func() {
+		for up {
+			record, err := perfReader.Read()
+			if err != nil {
+				if errors.Is(err, perf.ErrClosed) {
+					break
+				}
+				logrus.Errorf("reading record from perf reader, err = %v", err)
+				continue
+			}
+
+			perfReaderRecordCh <- record
 		}
-		log.Printf("pid:%d ppid: %d:%s redirect %d -> %d:%s", event.Pid, event.Ppid, bpfgo.GoString(event.Comm[:]),
-			event.SrcFd, event.DstFd, bpfgo.GoString(event.DstFdFilename[:]))
+		logrus.Infof("shutdown goroutine from AuditReverseSh plugin")
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Println("🔴 Stopping AuditReverseSh()...")
+			up = false
+			return
+		case record := <-perfReaderRecordCh:
+			printEvent(record)
+		}
 	}
+}
+
+func printEvent(record perf.Record) {
+	var event reverseEventT
+	if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+		logrus.Printf("parsing perf event: %s", err)
+		return
+	}
+	logrus.Printf("pid:%d ppid: %d:%s redirect %d -> %d:%s", event.Pid, event.Ppid, bpfgo.GoString(event.Comm[:]),
+		event.SrcFd, event.DstFd, bpfgo.GoString(event.DstFdFilename[:]))
 }

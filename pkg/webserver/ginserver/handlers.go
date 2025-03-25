@@ -2,15 +2,24 @@ package ginserver
 
 import (
 	"flare/model/event"
+	wsvc "flare/pkg/client"
 	"flare/pkg/ebpfProc/fileAudit"
 	"flare/pkg/ns"
 	"flare/pkg/proc"
 	echann "flare/pkg/singleton/ebpf/chann"
-	wsvc "flare/pkg/webserver/service"
+	"flare/pkg/webserver/service"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
+
+var (
+	Svc *service.SvcRuntimeData
+)
+
+func init() {
+	Svc = service.Svc
+}
 
 // GetHello 处理根路径请求
 func GetHello(c *gin.Context) {
@@ -149,4 +158,33 @@ func getFileAuditMap(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": res,
 	})
+}
+
+func enablePlugin(c *gin.Context) {
+	var payload struct {
+		Plugin string `json:"plugin"`
+	}
+	if err := c.BindJSON(&payload); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "插件参数错误",
+		})
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, Svc.EnableNamedPlugin(payload.Plugin))
+}
+
+func disablePlugin(c *gin.Context) {
+	var payload struct {
+		Plugin string `json:"plugin"`
+	}
+	if err := c.BindJSON(&payload); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "插件参数错误",
+		})
+		c.Abort()
+		return
+	}
+	c.JSON(http.StatusOK, Svc.DisableNamedPlugin(payload.Plugin))
 }
