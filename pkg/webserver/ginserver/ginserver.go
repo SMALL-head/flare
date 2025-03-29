@@ -34,6 +34,7 @@ func StartGinServer(config ServerConfig) {
 	gin.DefaultWriter = io.Discard
 	// 创建一个默认的 Gin 引擎
 	r := gin.New()
+	r.Use(gin.Recovery()) // gin server一定要有的东西
 
 	// 注册路由
 	RegisterRoutes(r)
