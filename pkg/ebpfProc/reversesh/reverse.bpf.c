@@ -74,18 +74,14 @@ int BPF_KPROBE(kprobe__fd_install, unsigned int fd, struct file *file) {
 
     get_file_path(file, value.filename, sizeof(value.filename));
     char tcp_filename_prefix[4] = "TCP";
-    // get_file_path(file, event.dst_fd_filename, sizeof(event.dst_fd_filename));
-    // bpf_get_current_comm(&event.comm, sizeof(event.comm));
-    // if (str_eq(event.comm, "python3", 8)) {
-    //     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &event, sizeof(event));
-    // }
 
     // fd == 0,1,2的判断貌似不需要啊
-    if (!(/*fd == 0 || fd == 1 || fd == 2 ||*/ str_eq(value.filename, tcp_filename_prefix, 4))) {
+    if (!(fd == 0 || fd == 1 || fd == 2 || str_eq(value.filename, tcp_filename_prefix, 4))) {
         // 不属于追踪的文件范畴
         return 0;
     }
     bpf_map_update_elem(&fd_map, &key, &value, BPF_ANY);
+    // bpf_printk("[] fd_install: pid %d, fd %d, filename %s\n", key.pid, key.fd, value.filename); 
 
     return 0;
 }
@@ -94,33 +90,55 @@ static bool handler_dup_event(struct trace_event_raw_sys_enter *ctx) {
     struct fd_key_t key = { 0 };
     struct event_t event = { 0 };
 
-    // args第一个参数是oldfd，第二个参数是newfd
-    // 可通过cat /sys/kernel/tracing/events/syscalls/sys_enter_dup2/format查看
-    key.pid = bpf_get_current_pid_tgid() >> 32;
-    key.fd = (u32)BPF_CORE_READ(ctx, args[0]);
-
-    struct fd_value_t *value = bpf_map_lookup_elem(&fd_map, &key);
-    if (!value) {
-        return false;
-    }
-
-    char tcp_filename[4] = "TCP";
-    if (!str_eq(value->filename, tcp_filename, 4)) {
-        return false;
-    }
-
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     if (task) {
         event.ppid = BPF_CORE_READ(task, real_parent, tgid);
     }
 
+    // args第一个参数是oldfd，第二个参数是newfd
+    // 可通过cat /sys/kernel/tracing/events/syscalls/sys_enter_dup2/format查看
+    key.pid = bpf_get_current_pid_tgid() >> 32;
+    key.fd = (u32)BPF_CORE_READ(ctx, args[0]);
+    // key.fd = 3;
+    struct fd_value_t *value = bpf_map_lookup_elem(&fd_map, &key);
+    if (!value) {
+        return false;
+    }
+    
+    // struct fd_value_t new_value = {0};
+    // new_value.filename[0] = 'a';
+    // new_value.filename[0] = '\0'; 
+    // key.fd = (u32)BPF_CORE_READ(ctx, args[1]);
+    // bpf_map_update_elem(&fd_map, &key, value, BPF_ANY);
+
+    // char tcp_filename[4] = "TCP";
+    // if (!str_eq(value->filename, tcp_filename, 4)) {
+    //     return false;
+    // }
+
+   
+
     event.pid = key.pid;
     event.src_fd = (u32)BPF_CORE_READ(ctx, args[1]);
+    event.dst_fd = key.fd;
+
     // 注：src重定向到dst文件上
     if (!(event.src_fd == 0 || event.src_fd == 1 || event.src_fd == 2)) {
         return false;
     }
-    event.dst_fd = key.fd;
+
+    // if (
+    //     !(event.dst_fd == 0 || event.dst_fd == 1 || event.dst_fd == 2)) {
+    //     return false;
+    // }
+    // if (!(event.src_fd == 0 || event.src_fd == 1 || event.src_fd == 2) && 
+    //     !(event.dst_fd == 0 || event.dst_fd == 1 || event.dst_fd == 2)) {
+    //     return false;
+    // }
+
+    u64 t = bpf_ktime_get_ns();
+    event.trigger_time = t;
+    
     bpf_get_current_comm(&event.comm, sizeof(event.comm));
     // 莫非在map里的值也属于kernel空间，所以这里的value也不能直接读取
     bpf_probe_read_kernel_str(&event.dst_fd_filename, sizeof(event.dst_fd_filename), value->filename);

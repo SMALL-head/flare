@@ -17,6 +17,7 @@ type reverseEventT struct {
 	Ppid          uint32
 	SrcFd         uint32
 	DstFd         uint32
+	TriggerTime   uint64
 	Comm          [16]int8
 	DstFdFilename [16]int8
 }
