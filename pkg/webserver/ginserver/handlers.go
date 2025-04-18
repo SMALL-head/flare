@@ -21,10 +21,10 @@ func init() {
 	Svc = service.Svc
 }
 
-// GetHello 处理根路径请求
+// GetHello 用作health检查
 func GetHello(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, Gin!",
+		"message": "Hello, This is Flare!",
 	})
 }
 

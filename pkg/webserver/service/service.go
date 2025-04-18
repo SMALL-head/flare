@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"flare/pkg/ebpfProc/reversesh"
-	"github.com/sirupsen/logrus"
 	"sync/atomic"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -67,8 +68,18 @@ func (s *SvcRuntimeData) DisableNamedPlugin(name string) bool {
 		return false
 	} else {
 		cancelFunc()
+		delete(s.pluginDisableContext, name)
 		s.pluginStatus[name].Store(false)
 		logrus.Infof("reverse sh plugin %s disabled", name)
 		return true
+	}
+}
+
+func (s *SvcRuntimeData) CloseAllPlugins() {
+	for name, cancelFunc := range s.pluginDisableContext {
+		cancelFunc()
+		delete(s.pluginDisableContext, name)
+		s.pluginStatus[name].Store(false)
+		logrus.Infof("plugin %s disabled", name)
 	}
 }

@@ -95,6 +95,6 @@ func printEvent(record perf.Record) {
 		logrus.Printf("parsing perf event: %s", err)
 		return
 	}
-	logrus.Printf("pid:%d ppid: %d:%s redirect %d -> %d:%s", event.Pid, event.Ppid, bpfgo.GoString(event.Comm[:]),
-		event.SrcFd, event.DstFd, bpfgo.GoString(event.DstFdFilename[:]))
+	logrus.Printf("pid:%d ppid: %d:%s redirect %d -> %d:%s, time %d", event.Pid, event.Ppid, bpfgo.GoString(event.Comm[:]),
+		event.SrcFd, event.DstFd, bpfgo.GoString(event.DstFdFilename[:]), event.TriggerTime)
 }
