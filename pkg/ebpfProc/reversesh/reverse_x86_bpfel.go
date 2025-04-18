@@ -84,6 +84,7 @@ type reverseMapSpecs struct {
 	Dummy  *ebpf.MapSpec `ebpf:"dummy"`
 	Events *ebpf.MapSpec `ebpf:"events"`
 	FdMap  *ebpf.MapSpec `ebpf:"fd_map"`
+	FdMap2 *ebpf.MapSpec `ebpf:"fd_map2"`
 }
 
 // reverseVariableSpecs contains global variables before they are loaded into the kernel.
@@ -115,6 +116,7 @@ type reverseMaps struct {
 	Dummy  *ebpf.Map `ebpf:"dummy"`
 	Events *ebpf.Map `ebpf:"events"`
 	FdMap  *ebpf.Map `ebpf:"fd_map"`
+	FdMap2 *ebpf.Map `ebpf:"fd_map2"`
 }
 
 func (m *reverseMaps) Close() error {
@@ -122,6 +124,7 @@ func (m *reverseMaps) Close() error {
 		m.Dummy,
 		m.Events,
 		m.FdMap,
+		m.FdMap2,
 	)
 }
 
