@@ -10,17 +10,24 @@ func RegisterRoutes(r *gin.Engine) {
 	r.GET("/hello", GetHello)
 
 	eFile := r.Group("/ebpf/file")
-	// 添加审计文件名
-	eFile.POST("/addAuditFileName", addAuditFileName)
+	{
+		// 添加审计文件名
+		eFile.POST("/addAuditFileName", addAuditFileName)
 
-	// 删除审计文件名
-	eFile.POST("/deleteAuditFileName", deleteAuditFileName)
+		// 删除审计文件名
+		eFile.POST("/deleteAuditFileName", deleteAuditFileName)
+	}
 
 	debugger := r.Group("/debug")
 	{
 		e := debugger.Group("/ebpf")
 		{
 			e.GET("/fileAudit/map", getFileAuditMap)
+
+		}
+		s := debugger.Group("/config")
+		{
+			s.POST("/setGrpcDelay", setGrpcDelay)
 		}
 	}
 	ePlugin := r.Group("/ebpf/plugin")

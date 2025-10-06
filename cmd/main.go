@@ -5,6 +5,7 @@ import (
 	"flare/pkg/singleton/docker/chann"
 	"flare/pkg/svc"
 	"flare/pkg/webserver/ginserver"
+	"flare/pkg/webserver/service"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +18,12 @@ func main() {
 	stopCh := make(chan os.Signal, 1)
 
 	signal.Notify(stopCh, os.Interrupt, syscall.SIGTERM)
-	logrus.Info("start flare")
+	pwd, err := os.Getwd()
+	if err != nil {
+		logrus.Fatalf("get current working directory failed: %v", err)
+	}
+
+	logrus.Infof("start flare, curDir = %s", pwd)
 	// 监听docker事件
 	go svc.ListenForCreatePodEvent(chann.GetCreatePodEventChan(), chann.GetStopPodEventChan())
 	// 处理docker事件
@@ -35,12 +41,18 @@ func main() {
 	go fileAudit.HandleAuditFileChan()
 
 	// 启动web服务器
-	cfg := ginserver.DefaultConfig()
+	cfg, err := ginserver.LoadConfig("application.yaml")
+	if err != nil {
+		logrus.Fatalf("load config failed: %v", err)
+	}
+	cfg.Host = "0.0.0.0"
 	go ginserver.StartGinServer(cfg)
 
 	<-stopCh
 	// gracefully quit
 	logrus.Info("flare stop")
+	// 关闭reversesh插件
+	service.Svc.DisableNamedPlugin("reverseSh")
 	close(chann.GetCreatePodEventChan())
 	close(chann.GetStopPodEventChan())
 }

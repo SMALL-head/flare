@@ -88,7 +88,7 @@ int BPF_KPROBE(kprobe__fd_install, unsigned int fd, struct file *file) {
         return 0;
     }
     bpf_map_update_elem(&fd_map, &key, &value, BPF_ANY);
-    // bpf_printk("[] fd_install: pid %d, fd %d, filename %s\n", key.pid, key.fd, value.filename); 
+    bpf_printk("[] fd_install: pid %d, fd %d, filename %s\n", key.pid, key.fd, value.filename); 
 
     return 0;
 }
@@ -123,18 +123,27 @@ static bool handler_dup_event(struct trace_event_raw_sys_enter *ctx) {
         // 另一种重定向的检验， 例如 oldfd=219, newfd=0/1/2，需要在fd_map2中找匹配项
         // 二次重定向命中
         bpf_printk("dup2 - value2 enter: pid %d, fd %d, filename %s\n", key2.pid, key2.fd, value2->filename);
+        char tcp_filename_prefix[4] = "TCP";
+
+        if (!(str_eq(value2->filename, tcp_filename_prefix, 4))) {
+            // 不属于追踪的文件范畴，防止误判
+            goto out;
+        }
+
         u64 t = bpf_ktime_get_ns();
-            event.trigger_time = t;
-            
-            bpf_get_current_comm(&event.comm, sizeof(event.comm));
-            // 莫非在map里的值也属于kernel空间，所以这里的value也不能直接读取
-            bpf_probe_read_kernel_str(&event.dst_fd_filename, sizeof(event.dst_fd_filename), value1->filename);
-    
-            // 实际编程的时候才发现这里很混乱，
-            // 因为perfmap中的value的大小给的是指针的大小，那这里的最后的一个参数给的似乎就是event本身的大小了
-            bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &event, sizeof(event));
-            return true;
+        event.trigger_time = t;
+        
+        bpf_get_current_comm(&event.comm, sizeof(event.comm));
+        // 莫非在map里的值也属于kernel空间，所以这里的value也不能直接读取
+        bpf_probe_read_kernel_str(&event.dst_fd_filename, sizeof(event.dst_fd_filename), value1->filename);
+
+        // 实际编程的时候才发现这里很混乱，
+        // 因为perfmap中的value的大小给的是指针的大小，那这里的最后的一个参数给的似乎就是event本身的大小了
+        bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &event, sizeof(event));
+        return true;
     } 
+
+    out:
 
     if (value1) {
         // 命中tcp文件，但是重定向的newfd不是0/1/2，而是另一个值，此时需要将相关信息放置在fd_map2中，例如oldfd=3, newfd=219

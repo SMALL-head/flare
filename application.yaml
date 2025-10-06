@@ -1,0 +1,13 @@
+host: 0.0.0.0
+port: 8080
+mode: release
+
+grpc:
+  reverseSh:
+    host: kt-grpc.kernel-trace.svc.cluster.local
+    port: 50051
+
+client:
+  flareAdmin:
+    host: 127.0.0.1
+    port: 8800

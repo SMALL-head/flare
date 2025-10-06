@@ -188,3 +188,26 @@ func disablePlugin(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, Svc.DisableNamedPlugin(payload.Plugin))
 }
+
+func setGrpcDelay(c *gin.Context) {
+	payload := struct {
+		Delay string `json:"delay"`
+	}{}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "参数绑定错误: " + err.Error(),
+		})
+		c.Abort()
+		return
+	}
+	if err := Svc.SetGrpcDelay(payload.Delay); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "设置gRPC延迟失败: " + err.Error(),
+		})
+		c.Abort()
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "gRPC延迟设置成功",
+	})
+}
