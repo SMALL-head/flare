@@ -15,6 +15,7 @@ import (
 
 type WebClientSet struct {
 	FlareAdmin ClientWithHost
+	ZeroTrust  ClientWithHost
 }
 
 type ClientWithHost struct {
@@ -37,6 +38,9 @@ func GetWebClientSet() *WebClientSet {
 		}
 		host := v.GetString("client.flareAdmin.host")
 		port := v.GetString("client.flareAdmin.port")
+
+		ztHost := v.GetString("client.zeroTrust.host")
+		ztPort := v.GetString("client.zeroTrust.port")
 		if host == "" || port == "" {
 			panic("FlareAdmin host or port not configured in application.yaml")
 		}
@@ -47,6 +51,13 @@ func GetWebClientSet() *WebClientSet {
 					Timeout:   10 * time.Second,
 				},
 				BaseURL: fmt.Sprintf("http://%s:%s", host, port),
+			},
+			ZeroTrust: ClientWithHost{
+				Client: &http.Client{
+					Transport: &http.Transport{},
+					Timeout:   10 * time.Second,
+				},
+				BaseURL: fmt.Sprintf("http://%s:%s", ztHost, ztPort),
 			},
 		}
 	})
@@ -101,5 +112,30 @@ func (w *ClientWithHost) ReverseShRecord(ctids []uint64, msg string, syscall str
 		return err
 	}
 
+	return nil
+}
+
+func (ws *WebClientSet) ZeroTrustNotifyReversesh(ctid uint64, msg string) error {
+	url := fmt.Sprintf("%s/notify/kernel-func", ws.ZeroTrust.BaseURL)
+	body := struct {
+		CTID uint64 `json:"ctid"`
+		Msg  string `json:"msg"`
+	}{
+		CTID: ctid,
+		Msg:  msg,
+	}
+	bodyJsonStr, err := json.Marshal(body)
+	if err != nil {
+		logrus.Errorf("Failed to marshal request body: %v", err)
+		return err
+	}
+	reader := strings.NewReader(string(bodyJsonStr))
+	postResponse, err := ws.ZeroTrust.Post(url, "application/json", reader)
+	if err != nil {
+		logrus.Errorf("ZeroTrustNotifyReversesh request failed: %v", err)
+		return err
+	}
+	defer postResponse.Body.Close()
+	_, err = io.ReadAll(postResponse.Body)
 	return nil
 }

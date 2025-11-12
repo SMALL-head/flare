@@ -11,3 +11,6 @@ client:
   flareAdmin:
     host: 127.0.0.1
     port: 8800
+  zeroTrust:
+    host: 127.0.0.1
+    port: 8888

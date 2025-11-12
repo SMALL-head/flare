@@ -129,10 +129,16 @@ func AuditReverseSh(ctx context.Context) {
 						return
 					}
 					// 请求flare-admin的存储信息
-					client.GetWebClientSet().FlareAdmin.ReverseShRecord(r.CTIDs, r.Message, r.Syscall, nodeName)
+					_ = client.GetWebClientSet().FlareAdmin.ReverseShRecord(r.CTIDs, r.Message, r.Syscall, nodeName)
+					// 零信任引擎申请下降
+					if len(r.CTIDs) > 0 {
+						err = client.GetWebClientSet().ZeroTrustNotifyReversesh(r.CTIDs[0], "")
+						if err != nil {
+							logrus.Errorf("[ZeroTrustNotifyReversesh] notify zerotrust engine reversesh record failed, err = %v", err)
+						}
+					}
 				},
 			)
-
 		}
 	}
 
